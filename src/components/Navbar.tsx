@@ -2,87 +2,126 @@
 
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 
 export default function Navbar({ userRole }: { userRole?: string }) {
   const router = useRouter()
   const pathname = usePathname()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  // Close menu on route change
+  useEffect(() => {
+    setMenuOpen(false)
+  }, [pathname])
+
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [menuOpen])
 
   if (pathname === '/login') return null
 
   const handleLogout = async () => {
+    setMenuOpen(false)
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/login')
     router.refresh()
   }
 
+  const navLinks = [
+    { href: '/', label: 'Dashboard' },
+    { href: '/clientes', label: 'Clientes' },
+    { href: '/reportes', label: 'Reportes' },
+    ...(userRole === 'admin' ? [{ href: '/configuracion', label: 'Configuración' }] : []),
+  ]
+
   return (
-    <nav style={{ 
-      backgroundColor: 'var(--primary)', 
-      color: 'white', 
-      padding: '0.75rem 2rem', 
-      display: 'flex', 
-      justifyContent: 'space-between', 
-      alignItems: 'center',
-      position: 'sticky',
-      top: 0,
-      zIndex: 100,
-      boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
-        <Link href="/" style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '0.75rem',
-          textDecoration: 'none' 
-        }}>
-          <div style={{ 
-            width: '32px', 
-            height: '32px', 
-            backgroundColor: 'var(--accent)', 
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 'bold',
-            color: 'var(--primary)'
-          }}>
-            C
-          </div>
-          <span style={{ 
-            fontSize: '1.25rem', 
-            fontWeight: 700, 
-            letterSpacing: '-0.02em',
-            color: 'white'
-          }}>
+    <>
+      <nav className="navbar">
+        {/* Logo */}
+        <Link href="/" className="navbar-logo">
+          <div className="navbar-logo-icon">C</div>
+          <span className="navbar-logo-text">
             COBRANZA <span style={{ color: 'var(--accent)' }}>DESPACHO</span>
           </span>
         </Link>
-        
-        <div style={{ display: 'flex', gap: '2rem', marginTop: '4px' }}>
-          <Link href="/" className="nav-link" style={{ color: 'white' }}>Dashboard</Link>
-          <Link href="/clientes" className="nav-link" style={{ color: 'white' }}>Clientes</Link>
-          <Link href="/reportes" className="nav-link" style={{ color: 'white' }}>Reportes</Link>
-          {userRole === 'admin' && (
-            <Link href="/configuracion" className="nav-link" style={{ color: 'white' }}>Configuración</Link>
-          )}
+
+        {/* Desktop Links */}
+        <div className="navbar-links">
+          {navLinks.map(link => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="nav-link"
+              style={{ color: 'white' }}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* Desktop Logout */}
+        <div className="navbar-actions">
+          <button onClick={handleLogout} className="btn navbar-logout-btn">
+            Cerrar Sesión
+          </button>
+        </div>
+
+        {/* Hamburger Button (mobile only) */}
+        <button
+          className="navbar-hamburger"
+          onClick={() => setMenuOpen(prev => !prev)}
+          aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={menuOpen}
+        >
+          <span className={`hamburger-line ${menuOpen ? 'open-1' : ''}`} />
+          <span className={`hamburger-line ${menuOpen ? 'open-2' : ''}`} />
+          <span className={`hamburger-line ${menuOpen ? 'open-3' : ''}`} />
+        </button>
+      </nav>
+
+      {/* Mobile Drawer Overlay */}
+      {menuOpen && (
+        <div className="mobile-overlay" onClick={() => setMenuOpen(false)} />
+      )}
+
+      {/* Mobile Drawer */}
+      <div className={`mobile-drawer ${menuOpen ? 'mobile-drawer-open' : ''}`}>
+        <div className="mobile-drawer-header">
+          <span className="navbar-logo-text" style={{ fontSize: '1rem' }}>
+            COBRANZA <span style={{ color: 'var(--accent)' }}>DESPACHO</span>
+          </span>
+        </div>
+
+        <nav className="mobile-drawer-nav">
+          {navLinks.map(link => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`mobile-nav-link ${pathname === link.href ? 'mobile-nav-link-active' : ''}`}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="mobile-drawer-footer">
+          <div className="mobile-user-badge">
+            <span className="mobile-user-dot" />
+            <span style={{ fontSize: '0.875rem', opacity: 0.7 }}>
+              {userRole === 'admin' ? 'Administrador' : 'Socio'}
+            </span>
+          </div>
+          <button onClick={handleLogout} className="btn mobile-logout-btn">
+            Cerrar Sesión
+          </button>
         </div>
       </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-        <button 
-          onClick={handleLogout} 
-          className="btn" 
-          style={{ 
-            fontSize: '0.8125rem', 
-            color: 'rgba(255,255,255,0.7)',
-            padding: '0.5rem 1rem',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: 'var(--radius)'
-          }}
-        >
-          Cerrar Sesión
-        </button>
-      </div>
-    </nav>
+    </>
   )
 }
