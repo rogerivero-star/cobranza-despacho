@@ -5,8 +5,12 @@ export async function proxy(request: NextRequest) {
   const session = request.cookies.get('session')
   const { pathname } = request.nextUrl
 
-  // Allow login page and auth API
-  if (pathname.startsWith('/login') || pathname.startsWith('/api/auth/login')) {
+  // Allow login page, auth API, and seed API
+  if (
+    pathname.startsWith('/login') || 
+    pathname.startsWith('/api/auth/login') || 
+    pathname.startsWith('/api/auth/seed')
+  ) {
     if (session) {
       return NextResponse.redirect(new URL('/', request.url))
     }
