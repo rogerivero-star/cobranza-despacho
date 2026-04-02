@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 
-export default function Navbar() {
+export default function Navbar({ userRole }: { userRole?: string }) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -62,6 +62,9 @@ export default function Navbar() {
           <Link href="/" className="nav-link" style={{ color: 'white' }}>Dashboard</Link>
           <Link href="/clientes" className="nav-link" style={{ color: 'white' }}>Clientes</Link>
           <Link href="/reportes" className="nav-link" style={{ color: 'white' }}>Reportes</Link>
+          {userRole === 'admin' && (
+            <Link href="/configuracion" className="nav-link" style={{ color: 'white' }}>Configuración</Link>
+          )}
         </div>
       </div>
 
