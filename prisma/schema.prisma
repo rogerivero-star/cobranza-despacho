@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  username String @unique
+  password String
+}
+
+model Client {
+  id        Int       @id @default(autoincrement())
+  name      String
+  contact   String?
+  invoices  Invoice[]
+}
+
+model Invoice {
+  id              Int       @id @default(autoincrement())
+  clientId        Int
+  client          Client    @relation(fields: [clientId], references: [id])
+  amount          Float
+  invoiceNumber   String?
+  issueDate       DateTime  @default(now())
+  isPrepared      Boolean   @default(false)
+  isPaid          Boolean   @default(false)
+  paymentDate     DateTime?
+  noInvoice       Boolean   @default(false) // Pago sin factura
+}
