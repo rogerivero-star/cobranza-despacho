@@ -172,10 +172,12 @@ export default async function DashboardPage({
                   </td>
                 </tr>
               ))}
-              {invoices.length === 0 && (
+              {filteredInvoices.length === 0 && (
                 <tr>
                   <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted-foreground)' }}>
-                    No hay registros de facturación aún.
+                    {allInvoices.length === 0 
+                      ? "No hay registros de facturación aún." 
+                      : "No hay registros en esta categoría."}
                   </td>
                 </tr>
               )}
