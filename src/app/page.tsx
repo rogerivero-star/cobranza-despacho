@@ -28,8 +28,28 @@ function getStatusColor(issueDate: Date, isPaid: boolean) {
   return 'status-red'
 }
 
-export default async function DashboardPage() {
-  const { invoices, totalPaid, totalPending, totalInvoiced } = await getDashboardData()
+type Category = 'cobrado' | 'pendiente' | 'facturado' | 'todos'
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string }>
+}) {
+  const params = await searchParams
+  const category = (params.category as Category) || 'todos'
+  
+  const { invoices: allInvoices, totalPaid, totalPending, totalInvoiced } = await getDashboardData()
+
+  const filteredInvoices = allInvoices.filter(inv => {
+    if (category === 'cobrado') return inv.isPaid
+    if (category === 'pendiente') return !inv.isPaid
+    return true
+  })
+
+  // Dynamic values for the UI
+  const tableTitle = category === 'cobrado' ? 'Facturas Cobradas' : 
+                     category === 'pendiente' ? 'Facturas Pendientes' : 
+                     'Todos los Registros'
 
   return (
     <div className="container">
@@ -49,28 +69,62 @@ export default async function DashboardPage() {
         gap: '1.5rem',
         marginBottom: '3rem'
       }}>
-        <div className="card" style={{ borderLeft: '4px solid var(--success)' }}>
+        <Link 
+          href="/?category=cobrado" 
+          className="card" 
+          style={{ 
+            borderLeft: '4px solid var(--success)',
+            backgroundColor: category === 'cobrado' ? '#f0fdf4' : 'var(--card)',
+            boxShadow: category === 'cobrado' ? '0 0 0 2px var(--success), var(--shadow-lg)' : 'var(--shadow)',
+            transition: 'all 0.2s ease'
+          }}
+        >
           <p style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)', marginBottom: '0.5rem' }}>Total Cobrado</p>
           <p style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--success)' }}>
             ${totalPaid.toLocaleString('es-MX')}
           </p>
-        </div>
-        <div className="card" style={{ borderLeft: '4px solid var(--warning)' }}>
+        </Link>
+        <Link 
+          href="/?category=pendiente" 
+          className="card" 
+          style={{ 
+            borderLeft: '4px solid var(--warning)',
+            backgroundColor: category === 'pendiente' ? '#fffbeb' : 'var(--card)',
+            boxShadow: category === 'pendiente' ? '0 0 0 2px var(--warning), var(--shadow-lg)' : 'var(--shadow)',
+            transition: 'all 0.2s ease'
+          }}
+        >
           <p style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)', marginBottom: '0.5rem' }}>Pendiente</p>
           <p style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--warning)' }}>
             ${totalPending.toLocaleString('es-MX')}
           </p>
-        </div>
-        <div className="card" style={{ borderLeft: '4px solid var(--primary)' }}>
+        </Link>
+        <Link 
+          href="/?category=facturado" 
+          className="card" 
+          style={{ 
+            borderLeft: '4px solid var(--primary)',
+            backgroundColor: category === 'facturado' || category === 'todos' ? '#f8fafc' : 'var(--card)',
+            boxShadow: (category === 'facturado' || category === 'todos') ? '0 0 0 2px var(--primary), var(--shadow-lg)' : 'var(--shadow)',
+            transition: 'all 0.2s ease'
+          }}
+        >
           <p style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)', marginBottom: '0.5rem' }}>Total Facturado</p>
           <p style={{ fontSize: '1.75rem', fontWeight: 700 }}>
             ${totalInvoiced.toLocaleString('es-MX')}
           </p>
-        </div>
+        </Link>
       </div>
 
       <div className="card">
-        <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>Últimos Registros</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>{tableTitle}</h2>
+          {category !== 'todos' && (
+            <Link href="/" style={{ fontSize: '0.875rem', color: 'var(--accent)', fontWeight: 600 }}>
+              Ver todo
+            </Link>
+          )}
+        </div>
         <div className="table-container">
           <table>
             <thead>
@@ -85,7 +139,7 @@ export default async function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {invoices.map((inv) => (
+              {filteredInvoices.map((inv) => (
                 <tr key={inv.id}>
                   <td>
                     <span className={`status-indicator ${getStatusColor(inv.issueDate, inv.isPaid)}`}></span>
