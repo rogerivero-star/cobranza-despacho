@@ -96,3 +96,65 @@ export async function updateUser(formData: FormData) {
   cookieStore.delete('session')
   redirect('/login?message=Credenciales+actualizadas.+Por+favor+inicie+sesión+nuevamente.')
 }
+
+export async function registerUser(formData: FormData) {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')
+  
+  if (!session || session.value !== 'admin') {
+    throw new Error('No autorizado. Solo el administrador puede crear usuarios.')
+  }
+
+  const username = formData.get('username') as string
+  const password = formData.get('password') as string
+
+  if (!username || !password) {
+    throw new Error('El nombre de usuario y la contraseña son obligatorios.')
+  }
+
+  const existingUser = await prisma.user.findUnique({
+    where: { username }
+  })
+
+  if (existingUser) {
+    throw new Error('El nombre de usuario ya está en uso.')
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10)
+
+  await prisma.user.create({
+    data: {
+      username,
+      password: hashedPassword
+    }
+  })
+
+  revalidatePath('/configuracion')
+}
+
+export async function deleteUser(userId: number) {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')
+  
+  if (!session || session.value !== 'admin') {
+    throw new Error('No autorizado.')
+  }
+
+  const userToDelete = await prisma.user.findUnique({
+    where: { id: userId }
+  })
+
+  if (!userToDelete) {
+    throw new Error('Usuario no encontrado.')
+  }
+
+  if (userToDelete.username === 'admin') {
+    throw new Error('No se puede eliminar al administrador principal.')
+  }
+
+  await prisma.user.delete({
+    where: { id: userId }
+  })
+
+  revalidatePath('/configuracion')
+}
